@@ -50,7 +50,7 @@
         [command & rest-args] arguments]
     (cond
       errors
-      (do (doseq [e errors] (println e))
+      (do (doseq [e errors] (println "Error:" e))
           (System/exit 1))
 
       (:help options)

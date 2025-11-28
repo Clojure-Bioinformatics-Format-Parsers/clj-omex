@@ -86,15 +86,34 @@
        (RDFDataMgr/read model in lang))
      model)))
 
+(defn- normalize-path
+  "Normalize a relative path by removing leading './' and handling edge cases."
+  [^String path]
+  (cond
+    (nil? path) nil
+    (.startsWith path "./") (recur (subs path 2))
+    (.startsWith path "/") (subs path 1)
+    :else path))
+
+(defn- guess-rdf-lang
+  "Guess the RDF language based on file extension or MIME type."
+  [^String location ^String format]
+  (cond
+    (and format (.contains format "turtle")) Lang/TURTLE
+    (and location (.endsWith (.toLowerCase location) ".ttl")) Lang/TURTLE
+    (and location (.endsWith (.toLowerCase location) ".n3")) Lang/N3
+    (and location (.endsWith (.toLowerCase location) ".nt")) Lang/NTRIPLES
+    (and location (.endsWith (.toLowerCase location) ".jsonld")) Lang/JSONLD
+    :else Lang/RDFXML))
+
 (defn load-metadata-models
   "Given an omex-path, return a seq of Jena Models for each metadata entry."
   [^String omex-path]
   (let [manifest (read-manifest omex-path)
         meta-entries (metadata-entries manifest)]
-    (for [{:keys [location]} meta-entries
-          :let [loc (if (.startsWith location "./")
-                      (subs location 2)
-                      location)
-                bytes (extract-entry omex-path loc)]
+    (for [{:keys [location format]} meta-entries
+          :let [loc (normalize-path location)
+                bytes (extract-entry omex-path loc)
+                lang (guess-rdf-lang location format)]
           :when bytes]
-      (read-rdf-model bytes))))
+      (read-rdf-model bytes lang))))
