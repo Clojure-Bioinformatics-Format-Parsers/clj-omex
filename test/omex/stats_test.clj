@@ -24,7 +24,7 @@
 
 (deftest aggregate-stats-test
   (testing "aggregates stats over multiple archives"
-    (let [files (stats/omex-files-in-dir "resources")
+    (let [files (stats/omex-files-in-dir "test/resources")
           result (stats/aggregate-stats files)]
       (is (map? result))
       (is (= (count files) (:archive-count result)))

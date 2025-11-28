@@ -2,9 +2,9 @@
  ["src" "resources"]
 
  :deps
- {org.clojure/clojure   {:mvn/version "1.11.1"}
-  org.clojure/data.xml  {:mvn/version "0.2.0-alpha9"}
-  org.clojure/data.zip  {:mvn/version "1.1.0"}
+ {org.clojure/clojure      {:mvn/version "1.11.1"}
+  org.clojure/data.xml     {:mvn/version "0.0.8"}
+  org.clojure/data.zip     {:mvn/version "1.1.0"}
   org.apache.jena/jena-arq {:mvn/version "4.10.0"}}
 
  :aliases {:dev  {:extra-paths ["dev"]
