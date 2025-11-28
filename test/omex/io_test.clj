@@ -4,7 +4,7 @@
             [omex.io :as io]
             [clojure.java.io :as cio]))
 
-(def test-omex-path "resources/Beard, 2005.omex")
+(def test-omex-path "test/resources/Beard, 2005.omex")
 
 (deftest list-zip-entries-test
   (testing "lists ZIP entries from an OMEX archive"

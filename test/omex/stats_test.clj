@@ -3,7 +3,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [omex.stats :as stats]))
 
-(def test-omex-path "resources/Beard, 2005.omex")
+(def test-omex-path "test/resources/Beard, 2005.omex")
 
 (deftest archive-basic-stats-test
   (testing "computes basic stats for an OMEX archive"
@@ -18,7 +18,7 @@
 
 (deftest omex-files-in-dir-test
   (testing "finds .omex files in a directory"
-    (let [files (stats/omex-files-in-dir "resources")]
+    (let [files (stats/omex-files-in-dir "test/resources")]
       (is (seq files))
       (is (every? #(.endsWith ^String % ".omex") files)))))
 

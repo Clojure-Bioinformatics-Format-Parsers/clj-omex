@@ -3,38 +3,67 @@
    discovering metadata RDF files, and parsing RDF into Jena Models."
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io])
-  (:import [java.util.zip ZipFile ZipEntry]
-           [java.io ByteArrayInputStream ByteArrayOutputStream]
+  (:import [java.util.zip ZipFile ZipEntry ZipException]
+           [java.io ByteArrayInputStream ByteArrayOutputStream FileNotFoundException]
            [org.apache.jena.rdf.model ModelFactory]
-           [org.apache.jena.riot RDFDataMgr Lang]))
+           [org.apache.jena.riot RDFDataMgr Lang RiotException]))
+
+;;; ------------------------------------------------------------------
+;;; Error handling
+;;; ------------------------------------------------------------------
+
+(defn- wrap-io-error
+  "Wrap an I/O operation with consistent error handling."
+  [operation-name f]
+  (try
+    (f)
+    (catch FileNotFoundException e
+      (throw (ex-info (str operation-name ": file not found")
+                      {:type :file-not-found
+                       :message (.getMessage e)}
+                      e)))
+    (catch ZipException e
+      (throw (ex-info (str operation-name ": invalid ZIP file")
+                      {:type :invalid-zip
+                       :message (.getMessage e)}
+                      e)))
+    (catch Exception e
+      (throw (ex-info (str operation-name ": unexpected error")
+                      {:type :io-error
+                       :message (.getMessage e)}
+                      e)))))
 
 ;;; ------------------------------------------------------------------
 ;;; Low-level ZIP helpers
 ;;; ------------------------------------------------------------------
 
 (defn list-zip-entries
-  "Return a vector of entry info maps from the ZIP file at `zip-path`."
+  "Return a vector of entry info maps from the ZIP file at `zip-path`.
+   Throws ex-info with :type on I/O errors."
   [^String zip-path]
-  (with-open [zf (ZipFile. zip-path)]
-    (let [entries (enumeration-seq (.entries zf))]
-      (mapv (fn [^ZipEntry e]
-              {:name            (.getName e)
-               :size            (.getSize e)
-               :compressed-size (.getCompressedSize e)
-               :is-directory?   (.isDirectory e)
-               :last-modified   (.getTime e)})
-            entries))))
+  (wrap-io-error "list-zip-entries"
+    #(with-open [zf (ZipFile. zip-path)]
+       (let [entries (enumeration-seq (.entries zf))]
+         (mapv (fn [^ZipEntry e]
+                 {:name            (.getName e)
+                  :size            (.getSize e)
+                  :compressed-size (.getCompressedSize e)
+                  :is-directory?   (.isDirectory e)
+                  :last-modified   (.getTime e)})
+               entries)))))
 
 (defn extract-entry
   "Extract a single entry from the ZIP at `zip-path` by name.
-   Returns a byte array or nil if not found."
+   Returns a byte array or nil if not found.
+   Throws ex-info with :type on I/O errors."
   [^String zip-path ^String entry-name]
-  (with-open [zf (ZipFile. zip-path)]
-    (when-let [entry (.getEntry zf entry-name)]
-      (with-open [in (.getInputStream zf entry)
-                  out (ByteArrayOutputStream.)]
-        (io/copy in out)
-        (.toByteArray out)))))
+  (wrap-io-error "extract-entry"
+    #(with-open [zf (ZipFile. zip-path)]
+       (when-let [entry (.getEntry zf entry-name)]
+         (with-open [in (.getInputStream zf entry)
+                     out (ByteArrayOutputStream.)]
+           (io/copy in out)
+           (.toByteArray out))))))
 
 ;;; ------------------------------------------------------------------
 ;;; manifest.xml parsing
@@ -75,16 +104,34 @@
 ;;; Jena RDF model loading
 ;;; ------------------------------------------------------------------
 
+(defn- wrap-rdf-error
+  "Wrap an RDF parsing operation with consistent error handling."
+  [operation-name f]
+  (try
+    (f)
+    (catch RiotException e
+      (throw (ex-info (str operation-name ": RDF parsing error")
+                      {:type :rdf-parse-error
+                       :message (.getMessage e)}
+                      e)))
+    (catch Exception e
+      (throw (ex-info (str operation-name ": unexpected error")
+                      {:type :rdf-error
+                       :message (.getMessage e)}
+                      e)))))
+
 (defn read-rdf-model
   "Load an RDF model from bytes using Jena.
-   Defaults to RDF/XML; caller can pass `:lang` as Jena Lang."
+   Defaults to RDF/XML; caller can pass `:lang` as Jena Lang.
+   Throws ex-info with :type on parsing errors."
   ([^bytes rdf-bytes]
    (read-rdf-model rdf-bytes Lang/RDFXML))
   ([^bytes rdf-bytes lang]
-   (let [model (ModelFactory/createDefaultModel)]
-     (with-open [in (ByteArrayInputStream. rdf-bytes)]
-       (RDFDataMgr/read model in lang))
-     model)))
+   (wrap-rdf-error "read-rdf-model"
+     #(let [model (ModelFactory/createDefaultModel)]
+        (with-open [in (ByteArrayInputStream. rdf-bytes)]
+          (RDFDataMgr/read model in lang))
+        model))))
 
 (defn- normalize-path
   "Normalize a relative path by removing leading './' and handling edge cases."
