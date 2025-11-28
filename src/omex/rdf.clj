@@ -21,7 +21,7 @@
 
 (defn safe-extract
   "Wrap extraction in try-catch, returning nil on failure.
-   Logs errors if a logger is provided."
+   If error-handler is provided, it will be called with the exception."
   ([f] (safe-extract f nil))
   ([f error-handler]
    (try
