@@ -14,7 +14,9 @@
 
 (defn- to-json-str
   "Convert a Clojure data structure to JSON-like string.
-   Uses simple string conversion without external dependencies."
+   Uses simple string conversion without external dependencies.
+   Note: This is a basic implementation for CLI output. For production
+   use with complex data, consider adding a proper JSON library."
   [data]
   (cond
     (nil? data) "null"
@@ -22,14 +24,16 @@
     (keyword? data) (str "\"" (name data) "\"")
     (number? data) (str data)
     (boolean? data) (str data)
+    (symbol? data) (str "\"" (str data) "\"")
     (map? data) (str "{"
                      (str/join ", "
                                (map (fn [[k v]]
                                       (str (to-json-str k) ": " (to-json-str v)))
                                     data))
                      "}")
+    (set? data) (to-json-str (vec data))
     (sequential? data) (str "[" (str/join ", " (map to-json-str data)) "]")
-    :else (str "\"" (str data) "\"")))
+    :else (str "\"" (str/replace (str data) "\"" "\\\"") "\"")))
 
 (defn- print-json
   "Print data as JSON to stdout."

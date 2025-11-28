@@ -137,8 +137,8 @@ Thermodynamic driving forces with source and sink participants:
 Namespace registry enables bidirectional conversion:
 
 ```clojure
-"opb:OPB_00340" ⟷ "http://identifiers.org/opb/OPB_00340"
-"bqbiol:is" ⟷ "http://biomodels.net/biology-qualifiers/is"
+"opb:OPB_00340" <-> "http://identifiers.org/opb/OPB_00340"
+"bqbiol:is" <-> "http://biomodels.net/biology-qualifiers/is"
 ```
 
 ### Blank Node Normalization
