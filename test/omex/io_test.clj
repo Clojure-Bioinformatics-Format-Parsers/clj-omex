@@ -21,7 +21,7 @@
   (testing "extracts manifest.xml from an OMEX archive"
     (let [manifest-bytes (io/extract-entry test-omex-path "manifest.xml")]
       (is (some? manifest-bytes))
-      (is (instance? (Class/forName "[B") manifest-bytes))
+      (is (bytes? manifest-bytes))
       (is (pos? (count manifest-bytes)))))
   
   (testing "returns nil for non-existent entry"
