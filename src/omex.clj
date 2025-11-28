@@ -25,18 +25,5 @@
           (clojure.java.io/copy in-stream baos)
           (.toByteArray baos))))))
 
-
-(defn xml-zipper-from-string [s]
-  (-> (java.io.StringReader. s)
-      (org.xml.sax.InputSource.)
-      (xml/parse)
-      (zip/xml-zip)))
-
-(list-zip-entries "resources/Beard, 2005.omex")
-
-(def cellml (String. (extract-entry-into-memory "resources/Beard, 2005.omex" "beard_2005.cellml")))
-
-(def zippy (xml-zipper-from-string cellml))
-
-(-> zippy
-    z/descendants)
+(comment
+  (list-zip-entries "resources/Beard, 2005.omex"))
