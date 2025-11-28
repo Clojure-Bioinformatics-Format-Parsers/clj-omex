@@ -1,0 +1,22 @@
+@prefix semsim: <http://www.bhi.washington.edu/semsim#> .
+@prefix ro: <http://www.obofoundry.org/ro/ro.owl#> .
+@prefix opb: <http://identifiers.org/opb/> .
+@prefix fma: <http://identifiers.org/fma/> .
+@prefix chebi: <http://identifiers.org/chebi/> .
+
+<#composite1>
+    semsim:hasPhysicalEntity <#entity1> ;
+    semsim:hasPhysicalProperty opb:OPB_00340 .
+
+<#entity1>
+    semsim:hasPhysicalEntityReference chebi:CHEBI:29103 ;
+    ro:part_of fma:FMA:7088 .
+
+<#composite2>
+    semsim:hasPhysicalEntity <#entity2> ;
+    semsim:hasPhysicalProperty opb:OPB_00154 ;
+    semsim:hasMultiplier "2.0" .
+
+<#entity2>
+    semsim:hasPhysicalEntityReference chebi:CHEBI:17996 ;
+    ro:part_of fma:FMA:66836 .
