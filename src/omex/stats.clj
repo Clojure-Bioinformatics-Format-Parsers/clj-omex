@@ -11,9 +11,10 @@
 ;;; ------------------------------------------------------------------
 
 (defn archive-basic-stats
-  "Compute basic statistics for a single OMEX archive at `omex-path`.
+  "Compute basic statistics for a single OMEX archive.
+   Source can be a file path (String) or ZIP data (byte array).
    Returns a map with keys:
-     :path               - the archive path
+     :source             - the original source (path or :byte-array)
      :entry-count        - number of ZIP entries
      :total-size         - sum of uncompressed sizes in bytes
      :total-compressed   - sum of compressed sizes in bytes
@@ -24,12 +25,12 @@
      :num-process-annotations - count of process annotations found
      :top-opb-terms      - frequency map of top OPB terms
      :annotation-extraction-errors - any errors during annotation extraction"
-  [^String omex-path]
-  (let [zip-entries  (io/list-zip-entries omex-path)
-        manifest     (io/read-manifest omex-path)
+  [source]
+  (let [zip-entries  (io/list-zip-entries source)
+        manifest     (io/read-manifest source)
         meta-entries (io/metadata-entries manifest)
         ;; Extract annotations safely
-        extraction-result (rdf/archive-annotations-safe omex-path)
+        extraction-result (rdf/archive-annotations-safe source)
         annotations (when (:ok extraction-result) (:data extraction-result))
         ;; Count annotations across all metadata files
         singular-count (reduce + 0 (map #(count (:singular-annotations %)) annotations))
@@ -47,7 +48,7 @@
                             (concat (:errors extraction-result)
                                     (mapcat :extraction-errors annotations))
                             [(:error extraction-result)])]
-    {:path                         omex-path
+    {:source                       (if (string? source) source :byte-array)
      :entry-count                  (count zip-entries)
      :total-size                   (reduce + 0 (map :size zip-entries))
      :total-compressed             (reduce + 0 (map :compressed-size zip-entries))

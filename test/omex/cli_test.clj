@@ -25,7 +25,7 @@
 (deftest stats-cmd-output-test
   (testing "stats command produces output for valid archive"
     (let [output (with-out-str (cli/stats-cmd [test-omex-path]))]
-      (is (str/includes? output "path"))
+      (is (str/includes? output "source"))
       (is (str/includes? output "entry-count")))))
 
 (deftest extract-cmd-output-test
