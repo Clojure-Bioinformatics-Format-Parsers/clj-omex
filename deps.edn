@@ -16,7 +16,7 @@
                   :main-opts   ["-m" "cognitect.test-runner"]
                   :exec-fn     cognitect.test-runner.api/test}
            :quickdoc {:extra-deps {io.github.borkdude/quickdoc
-                                   {:git/sha "b4c1f87bc04e641b59a7b210f87060f2ce682886"}}
+                                   {:git/tag "v0.3.5" :git/sha "54a731b"}}
                       :exec-fn quickdoc.api/quickdoc}}}
 
 
