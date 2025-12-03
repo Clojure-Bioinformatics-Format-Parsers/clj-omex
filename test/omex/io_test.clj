@@ -2,6 +2,7 @@
   "Tests for omex.io namespace."
   (:require [clojure.test :refer [deftest testing is]]
             [omex.io :as io]
+            [omex.test-util :refer [read-file-bytes]]
             [clojure.java.io :as cio]))
 
 (def test-omex-path "test/resources/Beard, 2005.omex")
@@ -126,15 +127,6 @@
 ;;; ------------------------------------------------------------------
 ;;; Byte array support tests
 ;;; ------------------------------------------------------------------
-
-(defn- read-file-bytes
-  "Read a file into a byte array."
-  [path]
-  (let [file (cio/file path)
-        bytes (byte-array (.length file))]
-    (with-open [in (java.io.FileInputStream. file)]
-      (.read in bytes))
-    bytes))
 
 (deftest list-zip-entries-byte-array-test
   (testing "lists ZIP entries from byte array"

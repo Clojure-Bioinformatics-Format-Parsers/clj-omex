@@ -2,19 +2,11 @@
   "Tests for omex.stats namespace."
   (:require [clojure.test :refer [deftest testing is]]
             [omex.stats :as stats]
+            [omex.test-util :refer [read-file-bytes]]
             [clojure.java.io :as cio]))
 
 (def test-omex-path "test/resources/Beard, 2005.omex")
 (def test-fixture-omex "test/resources/fixtures/test-archive.omex")
-
-(defn- read-file-bytes
-  "Read a file into a byte array."
-  [path]
-  (let [file (cio/file path)
-        bytes (byte-array (.length file))]
-    (with-open [in (java.io.FileInputStream. file)]
-      (.read in bytes))
-    bytes))
 
 (deftest archive-basic-stats-test
   (testing "computes basic stats for an OMEX archive"

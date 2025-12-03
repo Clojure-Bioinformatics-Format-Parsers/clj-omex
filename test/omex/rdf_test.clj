@@ -3,6 +3,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [omex.rdf :as rdf]
             [omex.io :as io]
+            [omex.test-util :refer [read-file-bytes]]
             [clojure.java.io :as cio])
   (:import [org.apache.jena.rdf.model ModelFactory]
            [org.apache.jena.riot RDFDataMgr Lang]))
@@ -220,15 +221,6 @@
 ;;; ------------------------------------------------------------------
 ;;; Byte array support tests
 ;;; ------------------------------------------------------------------
-
-(defn- read-file-bytes
-  "Read a file into a byte array."
-  [path]
-  (let [file (cio/file path)
-        bytes (byte-array (.length file))]
-    (with-open [in (java.io.FileInputStream. file)]
-      (.read in bytes))
-    bytes))
 
 (deftest archive-annotations-byte-array-test
   (testing "extracts annotations from byte array"
