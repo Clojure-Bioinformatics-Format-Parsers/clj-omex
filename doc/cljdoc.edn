@@ -1,3 +1,0 @@
-{:cljdoc.doc/tree
- [["Readme" {:file "README.md"}]
-  ["Design" {:file "docs/DESIGN.md"}]]}

@@ -13,7 +13,6 @@ A Clojure library for working with OMEX (Open Modeling EXchange) archive files. 
   - SemSim composite annotations (entities, properties, processes)
   - OPB term references
 - **Statistics**: Compute statistics over single archives and collections
-- **CLI Tools**: Command-line interface for common operations
 
 ## Installation
 
@@ -93,23 +92,6 @@ Note: Replace the `:git/sha` value with the specific commit SHA you want to use.
 (stats/aggregate-stats ["model1.omex" "model2.omex"])
 ```
 
-### CLI
-
-```bash
-# Get statistics
-clojure -M -m omex.cli stats model.omex
-clojure -M -m omex.cli stats ./archive-directory/
-
-# Extract annotations as JSON
-clojure -M -m omex.cli extract model.omex
-
-# Read manifest
-clojure -M -m omex.cli manifest model.omex
-
-# Help
-clojure -M -m omex.cli help
-```
-
 ## Structured Error Handling
 
 Functions with `safe-` prefix return structured results instead of throwing exceptions:
@@ -176,10 +158,11 @@ clojure -M:test
 API documentation is automatically generated using [cljdoc](https://cljdoc.org/) and published to GitHub Pages whenever changes are pushed to the `main` or `master` branch. The documentation includes:
 
 - API reference for all public functions and namespaces
-- README and design documentation
-- Usage examples
+- README and usage examples
 
 Visit the [documentation site](https://clojure-bioinformatics-format-parsers.github.io/clj-omex/) to browse the full API documentation.
+
+For design documentation and implementation details, please refer to the [repository wiki](https://github.com/Clojure-Bioinformatics-Format-Parsers/clj-omex/wiki).
 
 ## License
 
