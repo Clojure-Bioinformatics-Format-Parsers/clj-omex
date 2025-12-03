@@ -171,6 +171,16 @@ Dynamic variables for controlling behavior:
 clojure -M:test
 ```
 
+## Documentation
+
+API documentation is automatically generated using [cljdoc](https://cljdoc.org/) and published to GitHub Pages whenever changes are pushed to the `main` or `master` branch. The documentation includes:
+
+- API reference for all public functions and namespaces
+- README and design documentation
+- Usage examples
+
+Visit the [documentation site](https://clojure-bioinformatics-format-parsers.github.io/clj-omex/) to browse the full API documentation.
+
 ## License
 
 Copyright © 2024
