@@ -1,0 +1,14 @@
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bqbiol: <http://biomodels.net/biology-qualifiers/> .
+@prefix bqmodel: <http://biomodels.net/model-qualifiers/> .
+
+<#model>
+    dc:title "Test Model" ;
+    dc:creator "Test Author" ;
+    dc:description "A test model for unit testing" ;
+    dcterms:created "2024-01-01" ;
+    bqbiol:is <https://identifiers.org/go/GO:0006754> ;
+    bqbiol:isVersionOf <https://identifiers.org/uniprot/P12345> ;
+    bqbiol:hasTaxon <https://identifiers.org/taxonomy/9606> ;
+    bqmodel:isDescribedBy <https://identifiers.org/pubmed/12345678> .

@@ -1,0 +1,21 @@
+@prefix semsim: <http://www.bhi.washington.edu/semsim#> .
+@prefix ro: <http://www.obofoundry.org/ro/ro.owl#> .
+@prefix opb: <http://identifiers.org/opb/> .
+@prefix chebi: <http://identifiers.org/chebi/> .
+
+<#process1>
+    semsim:hasSourceParticipant <#source1> ;
+    semsim:hasSinkParticipant <#sink1> ;
+    semsim:hasMediatorParticipant <#mediator1> ;
+    semsim:hasPhysicalProperty opb:OPB_00592 .
+
+<#source1>
+    semsim:hasPhysicalEntityReference chebi:CHEBI:29103 ;
+    semsim:hasMultiplier "1.0" .
+
+<#sink1>
+    semsim:hasPhysicalEntityReference chebi:CHEBI:17996 ;
+    semsim:hasMultiplier "1.0" .
+
+<#mediator1>
+    semsim:hasPhysicalEntityReference chebi:CHEBI:15377 .

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:dc="http://purl.org/dc/elements/1.1/"
+         xmlns:dcterms="http://purl.org/dc/terms/"
+         xmlns:bqbiol="http://biomodels.net/biology-qualifiers/"
+         xmlns:bqmodel="http://biomodels.net/model-qualifiers/"
+         xml:base="http://example.org/test/">
+  
+  <rdf:Description rdf:about="model">
+    <dc:title>Test Model RDF/XML</dc:title>
+    <dc:creator>Test Author</dc:creator>
+    <dc:description>A test model in RDF/XML format</dc:description>
+    <dcterms:created>2024-01-15</dcterms:created>
+    <bqbiol:is rdf:resource="https://identifiers.org/go/GO:0008150"/>
+    <bqbiol:isVersionOf rdf:resource="https://identifiers.org/uniprot/Q9Y6K9"/>
+    <bqbiol:hasTaxon rdf:resource="https://identifiers.org/taxonomy/10090"/>
+    <bqmodel:isDescribedBy rdf:resource="https://identifiers.org/doi/10.1234/example"/>
+  </rdf:Description>
+
+</rdf:RDF>

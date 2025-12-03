@@ -1,0 +1,27 @@
+@prefix semsim: <http://www.bhi.washington.edu/semsim#> .
+@prefix opb: <http://identifiers.org/opb/> .
+@prefix chebi: <http://identifiers.org/chebi/> .
+
+<#energy_diff1>
+    semsim:hasSourceParticipant <#high_energy> ;
+    semsim:hasSinkParticipant <#low_energy> ;
+    semsim:hasPhysicalProperty opb:OPB_01058 .
+
+<#high_energy>
+    semsim:hasPhysicalEntityReference chebi:CHEBI:15422 ;
+    semsim:hasMultiplier "1.0" .
+
+<#low_energy>
+    semsim:hasPhysicalEntityReference chebi:CHEBI:16761 ;
+    semsim:hasMultiplier "1.0" .
+
+<#energy_diff2>
+    semsim:hasSourceParticipant <#proton_high> ;
+    semsim:hasSinkParticipant <#proton_low> ;
+    semsim:hasPhysicalProperty opb:OPB_00378 .
+
+<#proton_high>
+    semsim:hasPhysicalEntityReference chebi:CHEBI:24636 .
+
+<#proton_low>
+    semsim:hasPhysicalEntityReference chebi:CHEBI:24636 .

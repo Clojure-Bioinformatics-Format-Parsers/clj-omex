@@ -4,6 +4,7 @@
             [omex.stats :as stats]))
 
 (def test-omex-path "test/resources/Beard, 2005.omex")
+(def test-fixture-omex "test/resources/fixtures/test-archive.omex")
 
 (deftest archive-basic-stats-test
   (testing "computes basic stats for an OMEX archive"
@@ -14,7 +15,15 @@
       (is (>= (:total-size result) 0))
       (is (>= (:total-compressed result) 0))
       (is (pos? (:manifest-entries result)))
-      (is (>= (:metadata-entries result) 0)))))
+      (is (>= (:metadata-entries result) 0))))
+  
+  (testing "includes annotation statistics"
+    (let [result (stats/archive-basic-stats test-fixture-omex)]
+      (is (number? (:num-singular-annotations result)))
+      (is (number? (:num-composite-annotations result)))
+      (is (number? (:num-process-annotations result)))
+      (is (map? (:top-opb-terms result)))
+      (is (vector? (:annotation-extraction-errors result))))))
 
 (deftest omex-files-in-dir-test
   (testing "finds .omex files in a directory"
@@ -30,4 +39,11 @@
       (is (= (count files) (:archive-count result)))
       (is (pos? (:total-entries result)))
       (is (vector? (:per-archive result)))
-      (is (= (count files) (count (:per-archive result)))))))
+      (is (= (count files) (count (:per-archive result))))))
+  
+  (testing "includes aggregate annotation statistics"
+    (let [result (stats/aggregate-stats [test-fixture-omex])]
+      (is (number? (:total-singular-annotations result)))
+      (is (number? (:total-composite-annotations result)))
+      (is (number? (:total-process-annotations result)))
+      (is (map? (:aggregate-opb-terms result))))))
