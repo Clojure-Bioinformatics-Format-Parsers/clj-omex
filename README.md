@@ -20,11 +20,15 @@ A Clojure library for working with OMEX (Open Modeling EXchange) archive files. 
 Add to your `deps.edn`:
 
 ```clojure
-{:deps {org.clojure/clojure {:mvn/version "1.11.1"}
+{:deps {io.github.Clojure-Bioinformatics-Format-Parsers/clj-omex 
+        {:git/sha "b74fe38"}
+        org.clojure/clojure {:mvn/version "1.11.1"}
         org.clojure/data.xml {:mvn/version "0.0.8"}
         org.clojure/data.zip {:mvn/version "1.1.0"}
         org.apache.jena/jena-arq {:mvn/version "4.10.0"}}}
 ```
+
+Note: Replace the `:git/sha` value with the specific commit SHA you want to use. You can find the latest commit SHA on the [GitHub repository](https://github.com/Clojure-Bioinformatics-Format-Parsers/clj-omex).
 
 ## Usage
 
