@@ -1,0 +1,6 @@
+{:git/url "https://github.com/Clojure-Bioinformatics-Format-Parsers/clj-omex"
+ :git/branch "main"
+ :source-paths ["src"]
+ :toc {:namespaces [{:title "Core"
+                     :namespaces [omex.io omex.rdf omex.stats omex.cli]}]}
+ :github/repo "Clojure-Bioinformatics-Format-Parsers/clj-omex"}

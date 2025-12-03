@@ -173,7 +173,7 @@ clojure -M:test
 
 ## Documentation
 
-API documentation is automatically generated using [cljdoc](https://cljdoc.org/) and published to GitHub Pages whenever changes are pushed to the `main` or `master` branch. The documentation includes:
+API documentation is automatically generated using [quickdoc](https://github.com/borkdude/quickdoc) and published to GitHub Pages whenever changes are pushed to the `main` or `master` branch. The documentation includes:
 
 - API reference for all public functions and namespaces
 - README and design documentation
