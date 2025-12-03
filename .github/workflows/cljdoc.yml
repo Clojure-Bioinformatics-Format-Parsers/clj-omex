@@ -1,4 +1,4 @@
-name: Generate and Publish cljdoc
+name: Generate and Publish Documentation
 
 on:
   push:
@@ -122,7 +122,7 @@ jobs:
           mkdir -p cljdoc-data
           mkdir -p docs-output
           
-          # Run cljdoc ingestion
+          # Run cljdoc to ingest the project
           docker run --rm \
             -v "$PWD:/project" \
             -v "$PWD/cljdoc-data:/app/data" \
@@ -133,16 +133,57 @@ jobs:
               --git /project \
               --pom /project/pom.xml \
               --jar /project/target/clj-omex-${{ steps.version.outputs.version }}.jar
-          
-          # Export static documentation
-          docker run --rm \
+      
+      - name: Start cljdoc server
+        run: |
+          # Start cljdoc server in background
+          docker run --rm -d \
+            -p 8000:8000 \
             -v "$PWD/cljdoc-data:/app/data" \
-            -v "$PWD/docs-output:/output" \
-            cljdoc/cljdoc \
-            clojure -A:cli export \
-              --project io.github.Clojure-Bioinformatics-Format-Parsers/clj-omex \
-              --version ${{ steps.version.outputs.version }} \
-              --output-dir /output
+            --name cljdoc-server \
+            cljdoc/cljdoc
+          
+          # Wait for server to start
+          echo "Waiting for cljdoc server to start..."
+          for i in {1..30}; do
+            if curl -f http://localhost:8000/ > /dev/null 2>&1; then
+              echo "Server is ready!"
+              break
+            fi
+            echo "Attempt $i: Server not ready yet..."
+            sleep 2
+          done
+      
+      - name: Export static documentation
+        run: |
+          # Use wget to mirror the documentation site
+          wget --recursive --no-parent --no-host-directories \
+            --cut-dirs=2 --page-requisites --convert-links \
+            --adjust-extension --no-clobber \
+            -P docs-output \
+            -e robots=off \
+            "http://localhost:8000/d/io.github.Clojure-Bioinformatics-Format-Parsers/clj-omex/${{ steps.version.outputs.version }}/"
+          
+          # Create an index.html redirect at root
+          cat > docs-output/index.html << 'HTMLEOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>clj-omex Documentation</title>
+            <meta http-equiv="refresh" content="0; url=./api/index.html">
+          </head>
+          <body>
+            <h1>clj-omex Documentation</h1>
+            <p>Redirecting to <a href="./api/index.html">API documentation</a>...</p>
+          </body>
+          </html>
+          HTMLEOF
+      
+      - name: Stop cljdoc server
+        if: always()
+        run: |
+          docker stop cljdoc-server || true
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
