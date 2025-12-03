@@ -4,11 +4,13 @@
    
    This namespace provides hardened I/O operations with structured error handling.
    Functions with 'safe-' prefix return {:ok true :result ...} or {:ok false :error {...}}
-   maps instead of throwing exceptions, allowing callers to handle errors gracefully."
+   maps instead of throwing exceptions, allowing callers to handle errors gracefully.
+   
+   Functions support both file paths (String) and in-memory byte arrays for ZIP data."
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io])
-  (:import [java.util.zip ZipFile ZipEntry ZipException]
-           [java.io ByteArrayInputStream ByteArrayOutputStream FileNotFoundException]
+  (:import [java.util.zip ZipFile ZipEntry ZipException ZipInputStream ZipOutputStream]
+           [java.io ByteArrayInputStream ByteArrayOutputStream FileNotFoundException File]
            [org.apache.jena.rdf.model ModelFactory]
            [org.apache.jena.riot RDFDataMgr Lang RiotException]))
 
@@ -132,33 +134,151 @@
 ;;; Low-level ZIP helpers
 ;;; ------------------------------------------------------------------
 
+(defn- extract-entry-from-stream
+  "Extract a single entry from a ZipInputStream by name.
+   Returns a byte array or nil if not found."
+  [^bytes zip-bytes ^String entry-name]
+  (with-open [bais (ByteArrayInputStream. zip-bytes)
+              zis (ZipInputStream. bais)]
+    (loop []
+      (if-let [entry (.getNextEntry zis)]
+        (if (= (.getName entry) entry-name)
+          (with-open [out (ByteArrayOutputStream.)]
+            (io/copy zis out)
+            (.toByteArray out))
+          (do
+            (.closeEntry zis)
+            (recur)))
+        nil))))
+
+(defn- list-entries-from-stream
+  "List entries from ZIP bytes using ZipInputStream."
+  [^bytes zip-bytes]
+  (with-open [bais (ByteArrayInputStream. zip-bytes)
+              zis (ZipInputStream. bais)]
+    (loop [entries []]
+      (if-let [^ZipEntry entry (.getNextEntry zis)]
+        (let [out (ByteArrayOutputStream.)]
+          (io/copy zis out)
+          (let [data (.toByteArray out)]
+            (.closeEntry zis)
+            (recur (conj entries
+                         {:name            (.getName entry)
+                          :size            (count data)
+                          :compressed-size (.getCompressedSize entry)
+                          :is-directory?   (.isDirectory entry)
+                          :last-modified   (.getTime entry)}))))
+        entries))))
+
 (defn list-zip-entries
-  "Return a vector of entry info maps from the ZIP file at `zip-path`.
+  "Return a vector of entry info maps from a ZIP source.
+   Source can be a file path (String) or ZIP data (byte array).
    Throws ex-info with :type on I/O errors."
-  [^String zip-path]
+  [source]
   (wrap-io-error "list-zip-entries"
-    #(with-open [zf (ZipFile. zip-path)]
-       (let [entries (enumeration-seq (.entries zf))]
-         (mapv (fn [^ZipEntry e]
-                 {:name            (.getName e)
-                  :size            (.getSize e)
-                  :compressed-size (.getCompressedSize e)
-                  :is-directory?   (.isDirectory e)
-                  :last-modified   (.getTime e)})
-               entries)))))
+    #(cond
+       (string? source)
+       (with-open [zf (ZipFile. ^String source)]
+         (let [entries (enumeration-seq (.entries zf))]
+           (mapv (fn [^ZipEntry e]
+                   {:name            (.getName e)
+                    :size            (.getSize e)
+                    :compressed-size (.getCompressedSize e)
+                    :is-directory?   (.isDirectory e)
+                    :last-modified   (.getTime e)})
+                 entries)))
+       
+       (bytes? source)
+       (list-entries-from-stream source)
+       
+       :else
+       (throw (ex-info "list-zip-entries: source must be a String path or byte array"
+                       {:type :invalid-argument
+                        :source-type (type source)})))))
 
 (defn extract-entry
-  "Extract a single entry from the ZIP at `zip-path` by name.
+  "Extract a single entry from a ZIP source by name.
+   Source can be a file path (String) or ZIP data (byte array).
    Returns a byte array or nil if not found.
    Throws ex-info with :type on I/O errors."
-  [^String zip-path ^String entry-name]
+  [source ^String entry-name]
   (wrap-io-error "extract-entry"
-    #(with-open [zf (ZipFile. zip-path)]
-       (when-let [entry (.getEntry zf entry-name)]
-         (with-open [in (.getInputStream zf entry)
-                     out (ByteArrayOutputStream.)]
-           (io/copy in out)
-           (.toByteArray out))))))
+    #(cond
+       (string? source)
+       (with-open [zf (ZipFile. ^String source)]
+         (when-let [entry (.getEntry zf entry-name)]
+           (with-open [in (.getInputStream zf entry)
+                       out (ByteArrayOutputStream.)]
+             (io/copy in out)
+             (.toByteArray out))))
+       
+       (bytes? source)
+       (extract-entry-from-stream source entry-name)
+       
+       :else
+       (throw (ex-info "extract-entry: source must be a String path or byte array"
+                       {:type :invalid-argument
+                        :source-type (type source)})))))
+
+;;; ------------------------------------------------------------------
+;;; ZIP to/from memory
+;;; ------------------------------------------------------------------
+
+(defn read-zip-to-memory
+  "Read entire ZIP into memory as a map of entry names to byte arrays.
+   Source can be a file path (String) or ZIP data (byte array).
+   Returns a map like {\"manifest.xml\" <bytes>, \"model.xml\" <bytes>, ...}.
+   Directories are not included in the result."
+  [source]
+  (wrap-io-error "read-zip-to-memory"
+    #(cond
+       (string? source)
+       (with-open [zf (ZipFile. ^String source)]
+         (let [entries (enumeration-seq (.entries zf))]
+           (into {}
+                 (for [^ZipEntry entry entries
+                       :when (not (.isDirectory entry))]
+                   [(.getName entry)
+                    (with-open [in (.getInputStream zf entry)
+                                out (ByteArrayOutputStream.)]
+                      (io/copy in out)
+                      (.toByteArray out))]))))
+       
+       (bytes? source)
+       (with-open [bais (ByteArrayInputStream. source)
+                   zis (ZipInputStream. bais)]
+         (loop [result {}]
+           (if-let [^ZipEntry entry (.getNextEntry zis)]
+             (if (.isDirectory entry)
+               (do
+                 (.closeEntry zis)
+                 (recur result))
+               (let [out (ByteArrayOutputStream.)]
+                 (io/copy zis out)
+                 (.closeEntry zis)
+                 (recur (assoc result (.getName entry) (.toByteArray out)))))
+             result)))
+       
+       :else
+       (throw (ex-info "read-zip-to-memory: source must be a String path or byte array"
+                       {:type :invalid-argument
+                        :source-type (type source)})))))
+
+(defn write-zip-from-memory
+  "Write a map of entry names to byte arrays as a ZIP.
+   Returns a byte array containing the ZIP data.
+   Entries is a map like {\"manifest.xml\" <bytes>, \"model.xml\" <bytes>, ...}."
+  [entries]
+  (wrap-io-error "write-zip-from-memory"
+    #(with-open [baos (ByteArrayOutputStream.)
+                 zos (ZipOutputStream. baos)]
+       (doseq [[^String name ^bytes data] entries]
+         (let [entry (ZipEntry. name)]
+           (.putNextEntry zos entry)
+           (.write zos data)
+           (.closeEntry zos)))
+       (.finish zos)
+       (.toByteArray baos))))
 
 ;;; ------------------------------------------------------------------
 ;;; manifest.xml parsing
@@ -176,9 +296,10 @@
                   :format   (get-in elem [:attrs :format])})))))
 
 (defn read-manifest
-  "Read and parse manifest.xml from an OMEX archive at `omex-path`."
-  [^String omex-path]
-  (some-> (extract-entry omex-path "manifest.xml")
+  "Read and parse manifest.xml from an OMEX archive.
+   Source can be a file path (String) or ZIP data (byte array)."
+  [source]
+  (some-> (extract-entry source "manifest.xml")
           parse-manifest))
 
 (defn safe-parse-manifest
@@ -193,10 +314,11 @@
 
 (defn safe-read-manifest
   "Safely read and parse manifest.xml from an OMEX archive.
+   Source can be a file path (String) or ZIP data (byte array).
    Returns {:ok true :manifest [...]} or {:ok false :error {...}}."
-  [^String omex-path]
+  [source]
   (try
-    (if-let [manifest-bytes (extract-entry omex-path "manifest.xml")]
+    (if-let [manifest-bytes (extract-entry source "manifest.xml")]
       (safe-parse-manifest manifest-bytes)
       (make-error :manifest "manifest.xml not found in archive"))
     (catch clojure.lang.ExceptionInfo e
@@ -273,13 +395,14 @@
     :else Lang/RDFXML))
 
 (defn load-metadata-models
-  "Given an omex-path, return a seq of Jena Models for each metadata entry."
-  [^String omex-path]
-  (let [manifest (read-manifest omex-path)
+  "Return a seq of Jena Models for each metadata entry in an OMEX archive.
+   Source can be a file path (String) or ZIP data (byte array)."
+  [source]
+  (let [manifest (read-manifest source)
         meta-entries (metadata-entries manifest)]
     (for [{:keys [location format]} meta-entries
           :let [loc (normalize-path location)
-                bytes (extract-entry omex-path loc)
+                bytes (extract-entry source loc)
                 lang (guess-rdf-lang location format)]
           :when bytes]
       (read-rdf-model bytes lang))))
@@ -318,17 +441,18 @@
 
 (defn safe-load-metadata-models
   "Safely load all metadata models from an OMEX archive.
+   Source can be a file path (String) or ZIP data (byte array).
    Returns {:ok true :models [{:location ... :model ...}...] :errors [...]}
    Errors are collected but don't prevent loading other models."
-  [^String omex-path]
+  [source]
   (try
-    (let [manifest-result (safe-read-manifest omex-path)]
+    (let [manifest-result (safe-read-manifest source)]
       (if (:ok manifest-result)
         (let [meta-entries (metadata-entries (:manifest manifest-result))
               results (for [{:keys [location format]} meta-entries
                             :let [loc (normalize-path location)
                                   bytes (try 
-                                          (extract-entry omex-path loc)
+                                          (extract-entry source loc)
                                           (catch Exception e nil))
                                   lang (guess-rdf-lang location format)]]
                         (if bytes

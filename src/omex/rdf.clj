@@ -517,18 +517,20 @@
 
 (defn archive-annotations
   "Extract all annotations from all metadata files in an OMEX archive.
+   Source can be a file path (String) or ZIP data (byte array).
    Returns a vector of annotation maps, one per metadata file."
-  [^String omex-path]
+  [source]
   (with-error-handling []
-    (->> (io/load-metadata-models omex-path)
+    (->> (io/load-metadata-models source)
          (mapv extract-all-annotations))))
 
 (defn archive-annotations-safe
   "Safely extract all annotations from all metadata files in an OMEX archive.
+   Source can be a file path (String) or ZIP data (byte array).
    Returns {:ok true :data [...] :errors [...]} with structured results."
-  [^String omex-path]
+  [source]
   (try
-    (let [load-result (io/safe-load-metadata-models omex-path)]
+    (let [load-result (io/safe-load-metadata-models source)]
       (if (:ok load-result)
         (let [extractions (for [{:keys [location model]} (:models load-result)]
                             (extract-all-annotations-safe model location))
@@ -544,11 +546,12 @@
 
 (defn aggregate-annotations
   "Aggregate annotations across multiple OMEX archives.
+   Sources can be file paths (String) or ZIP data (byte arrays).
    Returns a map with counts and collected annotations."
-  [omex-paths]
+  [sources]
   (with-error-handling {:error "Failed to aggregate annotations"}
-    (let [all-annotations (mapcat archive-annotations omex-paths)]
-      {:archive-count (count omex-paths)
+    (let [all-annotations (mapcat archive-annotations sources)]
+      {:archive-count (count sources)
        :metadata-files (count all-annotations)
        :dc-creators (->> all-annotations
                          (mapcat #(get-in % [:dc :creator]))

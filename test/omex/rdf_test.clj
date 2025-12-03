@@ -3,6 +3,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [omex.rdf :as rdf]
             [omex.io :as io]
+            [omex.test-util :refer [read-file-bytes]]
             [clojure.java.io :as cio])
   (:import [org.apache.jena.rdf.model ModelFactory]
            [org.apache.jena.riot RDFDataMgr Lang]))
@@ -216,6 +217,39 @@
       (is (vector? (:data result)))
       (is (number? (:model-count result)))
       (is (vector? (:errors result))))))
+
+;;; ------------------------------------------------------------------
+;;; Byte array support tests
+;;; ------------------------------------------------------------------
+
+(deftest archive-annotations-byte-array-test
+  (testing "extracts annotations from byte array"
+    (let [zip-bytes (read-file-bytes test-omex-path)
+          annotations (rdf/archive-annotations zip-bytes)]
+      (is (vector? annotations))))
+  
+  (testing "byte array annotations match file path annotations"
+    (let [zip-bytes (read-file-bytes test-omex-path)
+          annotations-from-path (rdf/archive-annotations test-omex-path)
+          annotations-from-bytes (rdf/archive-annotations zip-bytes)]
+      (is (= (count annotations-from-path) (count annotations-from-bytes))))))
+
+(deftest archive-annotations-safe-byte-array-test
+  (testing "safely extracts annotations from byte array"
+    (let [zip-bytes (read-file-bytes test-fixture-omex)
+          result (rdf/archive-annotations-safe zip-bytes)]
+      (is (:ok result))
+      (is (vector? (:data result)))
+      (is (number? (:model-count result)))
+      (is (vector? (:errors result)))))
+  
+  (testing "byte array safe annotations match file path safe annotations"
+    (let [zip-bytes (read-file-bytes test-fixture-omex)
+          result-from-path (rdf/archive-annotations-safe test-fixture-omex)
+          result-from-bytes (rdf/archive-annotations-safe zip-bytes)]
+      (is (= (:ok result-from-path) (:ok result-from-bytes)))
+      (is (= (:model-count result-from-path) (:model-count result-from-bytes)))
+      (is (= (count (:data result-from-path)) (count (:data result-from-bytes)))))))
 
 ;;; ------------------------------------------------------------------
 ;;; SPARQL-based extraction tests
